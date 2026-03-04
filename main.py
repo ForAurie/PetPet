@@ -1,154 +1,156 @@
-import tkinter as tk
-from tkinter import Canvas
-from PIL import Image, ImageDraw, ImageTk
-import random
-import math
+import sys, random, math
+from PyQt5 import QtWidgets, QtCore, QtGui
+from PIL import Image, ImageDraw
 
-class PetPet:
-    def __init__(self, root, scale = 0.2):
-        self.root = root
-        self.root.attributes('-topmost', True)  # 总是在顶层
-        self.root.attributes('-transparentcolor', 'white')  # 设置透明色
-        self.root.overrideredirect(True)  # 隐藏窗口装饰（标题栏、边框）
-        
-        # 设置窗口大小和位置
-        self.width = round(min(root.winfo_screenwidth(), root.winfo_screenheight()) * scale)
-        self.height = round(min(root.winfo_screenwidth(), root.winfo_screenheight()) * scale)
-        self.root.geometry(f'{self.width}x{self.height}+500+400')
-        
-        # 创建画布
-        self.canvas = Canvas(
-            root,
-            width = self.width,
-            height = self.height,
-            bg = 'white',
-            highlightthickness = 0
+from enum import Enum
+
+class MovementMode(Enum):
+    STOP = 0
+    FOLLOWMOUSE = 1
+    CONTINUOUSRANDOMWALK = 2
+    INTERMITTENTRANDOMWALK = 3
+
+# # 访问枚举成员
+# print(Color.RED)  # 输出 Color.RED
+# print(Color.RED.name)  # 输出 'RED'
+# print(Color.RED.value)  # 输出 1
+
+class PetPetWidget(QtWidgets.QWidget):
+    def __init__(self, config):
+        self.MainImagePath = config["MainImagePath"]
+        self.ScreenWitdh = config["ScreenWidth"]
+        self.ScreenHeight = config["ScreenHeight"]
+        self.Speed = config["Speed"]
+        self.MVMode = config["MovementMode"]
+        super().__init__()
+        self.setWindowFlags(
+            QtCore.Qt.FramelessWindowHint | # 移除标题栏和边框
+            QtCore.Qt.WindowStaysOnTopHint | # 窗口始终在其他窗口之上
+            QtCore.Qt.Tool # 隐藏在任务栏上
         )
-        self.canvas.pack()
-        
-        # 宠物位置
-        # self.x = 50
-        # self.y = 50
-        # self.vx = random.uniform(-2, 2)
-        # self.vy = random.uniform(-2, 2)
-        
-        # 宠物状态
-        # self.pet_emotion = "normal"  # normal, happy, sad
-        # self.emotion_timer = 0
-        
-        # 鼠标拖拽
-        # self.drag_data = {"x": 0, "y": 0}
-        # self.root.bind("<ButtonPress-1>", self.on_drag_start)
-        # self.root.bind("<B1-Motion>", self.on_drag_motion)
-        # self.root.bind("<ButtonRelease-1>", self.on_drag_stop)
-        
-        # 右键菜单（退出）
-        # self.root.bind("<Button-3>", lambda e: self.root.quit())
-        
-        # 开始动画循环
-        self.animate()
-    
-    # def on_drag_start(self, event):
-    #     """开始拖拽"""
-    #     self.drag_data["x"] = event.x
-    #     self.drag_data["y"] = event.y
-    #     self.vx = 0
-    #     self.vy = 0
-    #     self.pet_emotion = "happy"
-    #     self.emotion_timer = 30
-    
-    # def on_drag_motion(self, event):
-    #     """拖拽移动"""
-    #     dx = event.x_root - self.drag_data["x"]
-    #     dy = event.y_root - self.drag_data["y"]
-        
-    #     x = self.root.winfo_x() + dx
-    #     y = self.root.winfo_y() + dy
-        
-    #     self.root.geometry(f'{self.width}x{self.height}+{x}+{y}')
-    #     self.drag_data["x"] = event.x_root
-    #     self.drag_data["y"] = event.y_root
-    
-    # def on_drag_stop(self, event):
-    #     """停止拖拽"""
-    #     self.vx = random.uniform(-2, 2)
-    #     self.vy = random.uniform(-2, 2)
-    
-    def create_pet_image(self):
-        return Image.open(".\\Resources\\1.bmp").resize((self.width, self.height))
-        # img = Image.new('RGBA', (self.width, self.height), (255, 255, 255, 0))
-        # draw = ImageDraw.Draw(img)
-        
-        # # 根据情感绘制不同的表情
-        # if self.pet_emotion == "happy":
-        #     # 身体 - 圆形，黄色
-        #     draw.ellipse([20, 20, 80, 80], fill=(255, 200, 0, 255), outline=(200, 150, 0, 255))
-        #     # 眼睛 - 高兴的眼睛
-        #     draw.ellipse([35, 35, 45, 45], fill=(0, 0, 0, 255))
-        #     draw.ellipse([55, 35, 65, 45], fill=(0, 0, 0, 255))
-        #     # 嘴 - 笑脸
-        #     draw.arc([35, 40, 65, 65], 0, 180, fill=(0, 0, 0, 255), width=2)
-        # elif self.pet_emotion == "sad":
-        #     # 身体
-        #     draw.ellipse([20, 20, 80, 80], fill=(100, 150, 200, 255), outline=(50, 100, 150, 255))
-        #     # 眼睛 - 伤心的眼睛
-        #     draw.ellipse([35, 35, 45, 45], fill=(0, 0, 0, 255))
-        #     draw.ellipse([55, 35, 65, 45], fill=(0, 0, 0, 255))
-        #     # 嘴 - 伤心的嘴
-        #     draw.arc([35, 50, 65, 65], 180, 360, fill=(0, 0, 0, 255), width=2)
-        # else:  # normal
-        #     # 身体 - 圆形，紫色
-        #     draw.ellipse([20, 20, 80, 80], fill=(200, 100, 200, 255), outline=(150, 50, 150, 255))
-        #     # 眼睛
-        #     draw.ellipse([35, 35, 45, 45], fill=(0, 0, 0, 255))
-        #     draw.ellipse([55, 35, 65, 45], fill=(0, 0, 0, 255))
-        #     # 嘴 - 平静的嘴
-        #     draw.line([40, 55, 60, 55], fill=(0, 0, 0, 255), width=2)
-        
-        # return img
-    
-    def animate(self):
-        img = self.create_pet_image()
-        self.tk_image = ImageTk.PhotoImage(img)
-        self.canvas.create_image(0, 0, image=self.tk_image, anchor="nw")
-        # self.canvas.create_image(0, 0, image=self.tk_image)
-        self.root.after(50, self.animate) # 50 ms 后在此调用自己
-        # pass
-        # """动画循环"""
-        # # 更新位置
-        # self.x += self.vx
-        # self.y += self.vy
-        
-        # # 边界碰撞反弹
-        # if self.x <= 10 or self.x >= self.width - 10:
-        #     self.vx *= -1
-        # if self.y <= 10 or self.y >= self.height - 10:
-        #     self.vy *= -1
-        
-        # # 随机改变方向
-        # if random.random() < 0.02:
-        #     self.vx = random.uniform(-2, 2)
-        #     self.vy = random.uniform(-2, 2)
-        
-        # # 更新情感
-        # if self.emotion_timer > 0:
-        #     self.emotion_timer -= 1
-        # else:
-        #     self.pet_emotion = "normal"
-        
-        # # 清空画布
-        # self.canvas.delete("all")
-        
-        # # 绘制宠物
-        # img = self.create_pet_image()
-        # self.tk_image = ImageTk.PhotoImage(img)
-        # self.canvas.create_image(0, 0, image=self.tk_image, anchor="nw")
-        
-        # # 继续动画
-        # self.root.after(50, self.animate)
+        self.setWindowTitle("PetPet")
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground) # 启用每像素透明度
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("PetPet")
-    pet = PetPet(root)
-    root.mainloop()
+        self.unit = self.width = self.height = round(min(config["ScreenWidth"], config["ScreenHeight"]) * config["Scale"])
+
+        self.resize(self.width, self.height)
+
+        self.DragPos = None
+        self.MainImage = None
+        
+        
+        self.PosX = (config["ScreenWidth"] - self.width) / 2
+        self.PosY = (config["ScreenHeight"] - self.height) / 2
+
+        self.VelocityX = random.uniform(-self.unit * self.Speed, self.unit * self.Speed)
+        self.VelocityY = random.uniform(-self.unit * self.Speed, self.unit * self.Speed)
+
+        self.Speed *= self.unit
+        self.AccelRange = self.Speed * 0.1
+
+        self.AccelerationX = random.uniform(-self.AccelRange, self.AccelRange)
+        self.AccelerationY = random.uniform(-self.AccelRange, self.AccelRange)
+
+        self.DesLastingTime = 0
+
+        self._last_time = QtCore.QElapsedTimer()
+        self._last_time.start()
+        self.DestinationX, self.DestinationY = random.randint(0, self.ScreenWitdh - self.width), random.randint(0, self.ScreenHeight - self.height)
+        
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.animate)
+        self.timer.start(30) # 30ms interval (~33 FPS)
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter(self)
+        pix = QtGui.QPixmap.fromImage(self.make_image())
+        painter.drawPixmap(0, 0, pix)
+        painter.end()
+
+    def make_image(self):
+        if self.MainImage is None:
+            pil_img = Image.open(self.MainImagePath)
+            pil_img = pil_img.convert("RGBA")
+            pil_img = pil_img.resize((self.width, self.height), Image.LANCZOS)
+            data = pil_img.tobytes('raw', 'RGBA')
+            self.MainImage = QtGui.QImage(data, self.width, self.height, QtGui.QImage.Format_RGBA8888)
+        return self.MainImage
+
+    def animate(self):
+        Elapsed_ms = self._last_time.elapsed()
+        if Elapsed_ms <= 0:
+            return
+        self._last_time.restart()
+        dt = Elapsed_ms / 1000
+
+        # 更新追随点
+        self.DesLastingTime += Elapsed_ms
+        if self.DesLastingTime >= 25000:
+            self.DesLastingTime = 0
+            self.DestinationX, self.DestinationY = random.randint(0, self.ScreenWitdh - self.width), random.randint(0, self.ScreenHeight - self.height)
+        if self.DragPos:
+            self.move(round(self.PosX), round(self.PosY))
+        else:
+            match self.MVMode:
+                case MovementMode.CONTINUOUSRANDOMWALK:
+                    self.AccelerationX = self.AccelerationX * 0.1 + 0.9 * (0.1 * random.uniform(-self.AccelRange, self.AccelRange) + 0.9 * (self.DestinationX - self.PosX) / self.ScreenWitdh * self.AccelRange)
+                    self.AccelerationY = self.AccelerationY * 0.1 + 0.9 * (0.1 * random.uniform(-self.AccelRange, self.AccelRange) + 0.9 * (self.DestinationY - self.PosY) / self.ScreenHeight * self.AccelRange)
+
+                    self.VelocityX += self.AccelerationX
+                    self.VelocityY += self.AccelerationY
+                    
+                    self.VelocityX = max(-self.Speed, min(self.VelocityX, self.Speed))
+                    self.VelocityY = max(-self.Speed, min(self.VelocityY, self.Speed))
+                    self.PosX += self.VelocityX * dt
+                    self.PosY += self.VelocityY * dt
+
+                    RightLimit = self.ScreenWitdh - self.width
+                    BottomLimit = self.ScreenHeight - self.height
+                    if self.PosX < 0:
+                        self.PosX = 1
+                        self.VelocityX = -self.VelocityX
+                    elif self.PosX > RightLimit:
+                        self.PosX = RightLimit
+                        self.VelocityX = -self.VelocityX
+                    if self.PosY < 0:
+                        self.PosY = 1
+                        self.VelocityY = -self.VelocityY
+                    elif self.PosY > BottomLimit:
+                        self.PosY = BottomLimit - 1
+                        self.VelocityY = -self.VelocityY
+                case MovementMode.INTERMITTENTRANDOMWALK:
+                    pass
+                case MovementMode.FOLLOWMOUSE:
+                    self.PosX = self.PosX * 0.9 + QtGui.QCursor.pos().x() * 0.1
+                    self.PosY = self.PosY * 0.9 + QtGui.QCursor.pos().y() * 0.1
+        self.update()
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.RightButton:
+            QtWidgets.qApp.quit()
+        elif event.button() == QtCore.Qt.LeftButton:
+            self.DragPos = event.globalPos() - self.frameGeometry().topLeft()
+
+    def mouseMoveEvent(self, event):
+        if self.DragPos is not None and event.buttons() & QtCore.Qt.LeftButton:
+            Pos = event.globalPos() - self.DragPos
+            self.PosX, self.PosY = Pos.x(), Pos.y()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.DragPos = None
+
+if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+    
+    config = {
+        "Scale" : 0.05,
+        "ScreenWidth" : app.primaryScreen().size().width(),
+        "ScreenHeight" : app.primaryScreen().size().height(),
+        "MainImagePath" : ".\\Resources\\1.bmp",
+        "Speed" : 3,
+        "MovementMode" : MovementMode.CONTINUOUSRANDOMWALK
+    }
+    Pet = PetPetWidget(config)
+    Pet.show()
+    sys.exit(app.exec_())
