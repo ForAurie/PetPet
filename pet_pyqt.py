@@ -74,12 +74,9 @@ class PetPetWidget(QtWidgets.QWidget):
 
         # 更新追随点
         self.DesTime += Elapsed_ms
-        if self.DesTime >= 30000:
+        if self.DesTime >= 25000:
             self.DesTime = 0
             self.DestinationX, self.DestinationY = random.randint(0, self.ScreenWitdh - self.width), random.randint(0, self.ScreenHeight - self.height)
-        
-        
-        print(self.DestinationX, self.DestinationY)
         
         if self.DragPos is None:
             
